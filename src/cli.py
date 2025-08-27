@@ -55,7 +55,6 @@ def main():
                     f"⏭️  Skipped {info['student']} (lab {info['lab']}, looking for {args.lab_num})"
                 )
             elif info["success"]:
-                pbar.set_postfix({"student": info["student"], "lab": info["lab"]})
                 pbar.write(
                     f"👤 {info['student']} | 📘 Lab {info['lab']} | ⬇️ {info['filename']}"
                 )

@@ -1,9 +1,8 @@
 from pathlib import Path
 from urllib.parse import urlparse
 import os
-import tempfile
+import time
 
-import requests
 from selenium.common.exceptions import TimeoutException, WebDriverException
 
 from config.settings import DOWNLOAD_DIR
@@ -15,61 +14,73 @@ from downloader.file_utils import (
 )
 
 
-def _requests_download(url: str, dst_path: Path, driver=None, timeout=180) -> bool:
-    def _do(session: requests.Session) -> requests.Response:
-        headers = {
-            "User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:123.0) Gecko/20100101 Firefox/123.0"
-        }
-        return session.get(
-            url,
-            headers=headers,
-            stream=True,
-            timeout=timeout,
-            allow_redirects=True,
-        )
+def _browser_download_with_retries(driver, el, href, dst_path: Path, retries: int = 2) -> bool:
+    try:
+        driver.execute_script("arguments[0].setAttribute('download', arguments[1]);", el, dst_path.name)
+    except Exception:
+        pass
 
-    s = requests.Session()
-    r = _do(s)
+    attempt = 0
+    while attempt <= retries:
+        attempt += 1
 
-    if r.status_code in (401, 403) and driver is not None:
-        s = requests.Session()
+        before_handles = set(driver.window_handles)
+
+        driver.execute_script("arguments[0].scrollIntoView({block:'center'});", el)
         try:
-            for c in driver.get_cookies():
-                s.cookies.set(
-                    c.get("name"),
-                    c.get("value"),
-                    domain=c.get("domain"),
-                    path=c.get("path") or "/",
-                )
-        except Exception:
-            pass
-        r = _do(s)
+            driver.execute_script("arguments[0].target = '_blank'; arguments[0].click();", el)
+        except WebDriverException:
+            driver.execute_script("window.open(arguments[0], '_blank');", href)
 
-    r.raise_for_status()
+        new_handles = set()
+        for _ in range(20):
+            current_handles = set(driver.window_handles)
+            new_handles = current_handles - before_handles
+            if new_handles:
+                break
+            time.sleep(0.1)
 
-    dst_path.parent.mkdir(parents=True, exist_ok=True)
-    with tempfile.NamedTemporaryFile(dir=str(dst_path.parent), delete=False) as tmp:
-        for chunk in r.iter_content(chunk_size=8192):
-            if chunk:
-                tmp.write(chunk)
-        tmp_path = Path(tmp.name)
+        if new_handles:
+            new_handle = list(new_handles)[0]
+            driver.switch_to.window(new_handle)
 
-    os.replace(tmp_path, dst_path)
-    return True
+            new_url = driver.current_url or ""
+            if new_url.startswith("about:neterror"):
+                try:
+                    driver.close()
+                finally:
+                    rest = list(before_handles)
+                    if rest:
+                        driver.switch_to.window(rest[0])
+                time.sleep(2.0)
+                continue
+
+            on_downloads_complete(DOWNLOAD_DIR, idle_seconds=2)
+            try:
+                driver.close()
+            finally:
+                rest = list(before_handles)
+                if rest:
+                    driver.switch_to.window(rest[0])
+            return True
+
+        else:
+            new_url = driver.current_url or ""
+            if new_url.startswith("about:neterror"):
+                try:
+                    driver.back()
+                except Exception:
+                    pass
+                time.sleep(2.0)
+                continue
+
+            on_downloads_complete(DOWNLOAD_DIR, idle_seconds=2)
+            return True
+
+    return False
 
 
 def download_current_submission(driver, selected_lab=None):
-    """
-    Returns dict:
-      {
-        "success": bool,
-        "skipped": bool,
-        "student": str | None,
-        "lab": int | None,
-        "filename": str | None,
-        "error": str | None,
-      }
-    """
     result = {
         "success": False,
         "skipped": False,
@@ -117,39 +128,26 @@ def download_current_submission(driver, selected_lab=None):
             n += 1
 
     try:
-        _requests_download(href, dst_path, driver=driver, timeout=180)
-        result["success"] = True
-        result["filename"] = dst_path.name
-        return result
-    except requests.HTTPError as e:
-        result["error"] = f"HTTP error while downloading: {e}"
-    except Exception as e:
-        result["error"] = f"Requests download failed: {e}"
-
-    try:
-        driver.execute_script("arguments[0].scrollIntoView({block:'center'});", el)
-        try:
-            el.click()
-        except WebDriverException:
-            driver.execute_script("window.open(arguments[0], '_blank');", href)
-
-        on_downloads_complete(DOWNLOAD_DIR, idle_seconds=2)
+        ok = _browser_download_with_retries(driver, el, href, dst_path, retries=2)
+        if not ok:
+            result["error"] = "Browser download failed after retries (network error)."
+            return result
 
         files = list(Path(DOWNLOAD_DIR).glob("*"))
         if files:
             newest = max(files, key=lambda f: f.stat().st_mtime)
-            try:
-                os.replace(newest, dst_path)
-                result["success"] = True
-                result["filename"] = dst_path.name
-                result["error"] = None
-                return result
-            except Exception as e:
-                result["error"] = f"Could not rename file after browser download: {e}"
-        else:
-            result["error"] = "Browser download seems to have failed (no new file)."
+            if newest != dst_path:
+                try:
+                    os.replace(newest, dst_path)
+                except Exception as e:
+                    result["error"] = f"Could not rename file after browser download: {e}"
+                    return result
+
+        result["success"] = True
+        result["filename"] = dst_path.name
+        result["error"] = None
+        return result
 
     except Exception as e:
         result["error"] = f"Browser click/open failed: {e}"
-
-    return result
+        return result

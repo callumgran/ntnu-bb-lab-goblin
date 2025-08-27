@@ -48,6 +48,27 @@ class DriverManager:
             ]
         )
 
+        opts.set_preference("network.http.http3.enabled", False)
+        opts.set_preference("network.http.speculative-parallel-limit", 0)
+        opts.set_capability("unhandledPromptBehavior", "dismiss")
+        opts.set_capability("pageLoadStrategy", "eager")
+
+        opts.set_preference("browser.download.folderList", 2)
+        opts.set_preference("browser.download.dir", self.download_dir)
+        opts.set_preference("browser.download.useDownloadDir", True)
+        opts.set_preference("browser.helperApps.neverAsk.saveToDisk", mime_list)
+        opts.set_preference("browser.helperApps.neverAsk.openFile", mime_list)
+        opts.set_preference("pdfjs.disabled", True)
+        opts.set_preference("browser.download.manager.showWhenStarting", False)
+        opts.set_preference("browser.download.alwaysOpenPanel", False)
+        opts.set_preference("browser.download.manager.addToRecentDocs", False)
+
+        opts.set_preference("dom.disable_beforeunload", True)
+
+        opts.set_preference("browser.link.open_newwindow", 3)
+        opts.set_preference("browser.link.open_newwindow.restriction", 0)
+
+
         opts.set_preference("browser.download.folderList", 2)
         opts.set_preference("browser.download.dir", self.download_dir)
         opts.set_preference("browser.download.useDownloadDir", True)
@@ -55,12 +76,16 @@ class DriverManager:
         opts.set_preference("pdfjs.disabled", True)
         opts.set_preference("browser.download.manager.showWhenStarting", False)
         opts.set_preference("browser.download.alwaysOpenPanel", False)
-        opts.set_capability("unhandledPromptBehavior", "accept")
 
         self.driver = webdriver.Firefox(
             service=FirefoxService(GeckoDriverManager().install()),
             options=opts,
         )
+
+        self.driver.set_page_load_timeout(60)
+        self.driver.implicitly_wait(0)
+        self.driver.set_script_timeout(30)
+        
         return self.driver
 
     def quit_driver(self):
