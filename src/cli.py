@@ -1,21 +1,24 @@
-import argparse
+from tqdm import tqdm
 
 from downloader.driver import DriverManager
-from downloader.navigation import ensure_logged_in, open_vurdering, open_first_submission, go_next_submission
+from downloader.navigation import (
+    ensure_logged_in,
+    open_vurdering,
+    open_first_submission,
+    go_next_submission,
+)
 from downloader.submission import download_current_submission
-from config.settings import FIREFOX_PROFILE, DOWNLOAD_DIR, COURSE_ID
 from downloader.page_parser import get_total_items_from_header
+from parser.parser import build_parser
+
 
 def main():
-    parser = argparse.ArgumentParser(description="NTNU Blackboard Downloader CLI")
-    parser.add_argument('--course-id', type=str, default=COURSE_ID, help='NTNU Blackboard course ID (e.g., _52568_1), required!')
-    parser.add_argument('--download-dir', type=str, default=DOWNLOAD_DIR, help='Directory to save downloaded files, default is ./bb_downloads')
-    parser.add_argument('--profile', type=str, default=FIREFOX_PROFILE, help='Firefox profile path, default is ~/.mozilla/firefox/selenium-profile. See README for setup instructions.')
-    parser.add_argument('--lab-num', type=int, help='Optional to only download submissions for a specific lab number (e.g., 1, 2, 3, ...)')
-    parser.add_argument('--headless', type=bool, default=True, help='Run browser in headless mode (no GUI), default is True')
+    parser = build_parser()
     args = parser.parse_args()
 
-    course_url = f"https://ntnu.blackboard.com/ultra/courses/{args.course_id}/cl/outline"
+    course_url = (
+        f"https://ntnu.blackboard.com/ultra/courses/{args.course_id}/cl/outline"
+    )
 
     driver_manager = DriverManager(args.profile, args.download_dir, args.headless)
     driver = driver_manager.build_driver()
@@ -27,28 +30,54 @@ def main():
 
         total = get_total_items_from_header(driver)
         if total is not None:
-            print(f"📝 Needs grading: {total} element(er).")
+            print(f"📝 Needs grading: {total} element(s).")
         else:
-            print("📝 Couldn’t read the total count from the header.")
+            print(
+                "📝 Couldn’t read the total count from the header (progress will be unbounded)."
+            )
 
         open_first_submission(driver)
 
-        count = 0
-        while count < (total if total is not None else 9999):
-            count += 1
-            print(f"\n=== Submission {count} ===")
-            if download_current_submission(driver, selected_lab=args.lab_num):
-                pass
+        if total and total > 0:
+            pbar = tqdm(total=total, unit="sub", desc="Downloading", ncols=100)
+            remaining_limit = total
+        else:
+            pbar = tqdm(unit="sub", desc="Downloading", ncols=100)
+            remaining_limit = 10_000
+
+        processed = 0
+        while processed < remaining_limit:
+            pbar.set_description(f"Submission {processed + 1}")
+            info = download_current_submission(driver, selected_lab=args.lab_num)
+
+            if info["skipped"]:
+                pbar.write(
+                    f"⏭️  Skipped {info['student']} (lab {info['lab']}, looking for {args.lab_num})"
+                )
+            elif info["success"]:
+                pbar.set_postfix({"student": info["student"], "lab": info["lab"]})
+                pbar.write(
+                    f"👤 {info['student']} | 📘 Lab {info['lab']} | ⬇️ {info['filename']}"
+                )
+            else:
+                msg = info["error"] or "unknown error"
+                pbar.write(f"⚠️  {info['student']} | Lab {info['lab']}: {msg}")
+
+            processed += 1
+            pbar.update(1)
 
             if not go_next_submission(driver):
-                print("Reached last submission ✅")
                 break
 
+        pbar.close()
         print(f"\nDone! Files are in: {args.download_dir}")
+
     except Exception as e:
         print(f"An error occurred: {e}")
+        raise
     finally:
         driver_manager.quit_driver()
+
 
 if __name__ == "__main__":
     main()

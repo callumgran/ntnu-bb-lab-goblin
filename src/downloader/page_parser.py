@@ -13,7 +13,9 @@ def get_student_name(driver):
     wait_for_page(driver)
     try:
         span = WebDriverWait(driver, WAIT).until(
-            EC.presence_of_element_located((By.XPATH, "//div[contains(@class,'students-pager')]//h3/span[last()]"))
+            EC.presence_of_element_located(
+                (By.XPATH, "//div[contains(@class,'students-pager')]//h3/span[last()]")
+            )
         )
         text = (span.text or "").strip()
         name = re.sub(r"\s*\(Forsøk\s+\d+\s+av\s+\d+\)\s*$", "", text).strip()
@@ -28,9 +30,15 @@ def get_student_name(driver):
 def get_lab_number(driver):
     wait_for_page(driver)
     try:
-        title = WebDriverWait(driver, WAIT).until(
-            EC.presence_of_element_located((By.CSS_SELECTOR, "#pageTitleHeader #pageTitleText"))
-        ).text.strip()
+        title = (
+            WebDriverWait(driver, WAIT)
+            .until(
+                EC.presence_of_element_located(
+                    (By.CSS_SELECTOR, "#pageTitleHeader #pageTitleText")
+                )
+            )
+            .text.strip()
+        )
     except Exception:
         title = ""
 
@@ -43,7 +51,9 @@ def get_total_items_from_header(driver):
     wait_for_page(driver)
     try:
         h3 = WebDriverWait(driver, WAIT).until(
-            EC.presence_of_element_located((By.CSS_SELECTOR, "div.criteriaSummary > h3"))
+            EC.presence_of_element_located(
+                (By.CSS_SELECTOR, "div.criteriaSummary > h3")
+            )
         )
         text = h3.text or ""
         m = re.search(r"(\d+)", text)
@@ -54,7 +64,10 @@ def get_total_items_from_header(driver):
 
 def find_download_link(driver):
     wait_for_page(driver)
-    locator = (By.CSS_SELECTOR, "div.downloadFile a.dwnldBtn[href*='/webapps/assignment/download']")
+    locator = (
+        By.CSS_SELECTOR,
+        "div.downloadFile a.dwnldBtn[href*='/webapps/assignment/download']",
+    )
     el = WebDriverWait(driver, WAIT).until(EC.element_to_be_clickable(locator))
     href = el.get_attribute("href") or ""
     file_basename = None

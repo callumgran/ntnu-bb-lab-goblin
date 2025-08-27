@@ -14,7 +14,7 @@ def split_extension(filename: str):
     p = Path(filename)
     if len(p.suffixes) > 1:
         ext = "".join(p.suffixes)
-        stem = p.name[:-len(ext)]
+        stem = p.name[: -len(ext)]
     else:
         ext = p.suffix
         stem = p.stem

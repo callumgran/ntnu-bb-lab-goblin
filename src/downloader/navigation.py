@@ -8,6 +8,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from config.settings import WAIT
 from downloader.selenium_utils import wait_for_page, url_contains_any
 
+
 def ensure_logged_in(driver):
     wait_for_page(driver)
 
@@ -19,8 +20,13 @@ def ensure_logged_in(driver):
         pass
 
     try:
-        if "login.microsoftonline.com" in driver.current_url or "microsoft.com" in driver.current_url:
-            print("👉 Continue with Microsoft login if prompted… (waiting for redirect back)")
+        if (
+            "login.microsoftonline.com" in driver.current_url
+            or "microsoft.com" in driver.current_url
+        ):
+            print(
+                "👉 Continue with Microsoft login if prompted… (waiting for redirect back)"
+            )
             url_contains_any(
                 driver,
                 ["ntnu.blackboard.com/ultra/courses", "ntnu.blackboard.com/learn"],
@@ -32,7 +38,9 @@ def ensure_logged_in(driver):
     try:
         WebDriverWait(driver, WAIT * 3).until(EC.url_contains("/cl/outline"))
     except TimeoutException:
-        WebDriverWait(driver, WAIT).until(lambda d: "ntnu.blackboard.com" in d.current_url)
+        WebDriverWait(driver, WAIT).until(
+            lambda d: "ntnu.blackboard.com" in d.current_url
+        )
     wait_for_page(driver)
 
 
@@ -51,7 +59,9 @@ def go_next_submission(driver):
     try:
         a = WebDriverWait(driver, WAIT).until(EC.presence_of_element_located(locator))
         try:
-            container = a.find_element(By.XPATH, "./ancestor::div[contains(@class,'pager')][1]")
+            container = a.find_element(
+                By.XPATH, "./ancestor::div[contains(@class,'pager')][1]"
+            )
             if "disabled" in (container.get_attribute("class") or ""):
                 return False
         except Exception:
@@ -66,8 +76,13 @@ def go_next_submission(driver):
         try:
             WebDriverWait(driver, WAIT * 3).until(
                 lambda d: (
-                    (before_txt is not None and
-                        d.find_element(By.CSS_SELECTOR, "div.students-pager h3").text.strip() != before_txt)
+                    (
+                        before_txt is not None
+                        and d.find_element(
+                            By.CSS_SELECTOR, "div.students-pager h3"
+                        ).text.strip()
+                        != before_txt
+                    )
                     or "currentAttemptIndex=" in d.current_url
                     or "attempt_id=" in d.current_url
                 )
@@ -82,35 +97,44 @@ def go_next_submission(driver):
 
 
 def open_vurdering(driver, course_id):
-	wait_for_page(driver)
+    wait_for_page(driver)
 
-	needs_grading_url = f"https://ntnu.blackboard.com/webapps/gradebook/do/instructor/viewNeedsGrading?course_id={course_id}"
-	current = driver.current_url
-	if "viewNeedsGrading" not in current:
-		driver.get(needs_grading_url)
-		try:
-			WebDriverWait(driver, WAIT * 2).until(
-				lambda d: "viewNeedsGrading" in d.current_url or
-						  d.find_elements(By.CSS_SELECTOR, "iframe.classic-learn-iframe, iframe[src*='/webapps/']")
-			)
-		except TimeoutException:
-			pass
+    needs_grading_url = f"https://ntnu.blackboard.com/webapps/gradebook/do/instructor/viewNeedsGrading?course_id={course_id}"
+    current = driver.current_url
+    if "viewNeedsGrading" not in current:
+        driver.get(needs_grading_url)
+        try:
+            WebDriverWait(driver, WAIT * 2).until(
+                lambda d: "viewNeedsGrading" in d.current_url
+                or d.find_elements(
+                    By.CSS_SELECTOR,
+                    "iframe.classic-learn-iframe, iframe[src*='/webapps/']",
+                )
+            )
+        except TimeoutException:
+            pass
 
-	if "viewNeedsGrading" in driver.current_url:
-		wait_for_page(driver)
-		return True
+    if "viewNeedsGrading" in driver.current_url:
+        wait_for_page(driver)
+        return True
 
 
 def open_first_submission(driver):
     wait_for_page(driver)
-    locator = (By.CSS_SELECTOR, "tbody#listContainer_databody a.gradeAttempt[aria-label^='Vurder forsøk for']")
+    locator = (
+        By.CSS_SELECTOR,
+        "tbody#listContainer_databody a.gradeAttempt[aria-label^='Vurder forsøk for']",
+    )
     try:
         el = WebDriverWait(driver, WAIT).until(EC.element_to_be_clickable(locator))
         driver.execute_script("arguments[0].scrollIntoView({block:'center'});", el)
         el.click()
 
         WebDriverWait(driver, WAIT * 3).until(
-            lambda d: any(s in d.current_url for s in ("gradeAssignment", "attempt_id", "assignment/grade"))
+            lambda d: any(
+                s in d.current_url
+                for s in ("gradeAssignment", "attempt_id", "assignment/grade")
+            )
         )
         wait_for_page(driver)
         return True

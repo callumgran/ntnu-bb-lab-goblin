@@ -3,6 +3,7 @@ from selenium import webdriver
 from selenium.webdriver.firefox.service import Service as FirefoxService
 from webdriver_manager.firefox import GeckoDriverManager
 
+
 class DriverManager:
     def __init__(self, profile_path: str, download_dir: str, headless: bool = True):
         self.profile_path = profile_path
@@ -23,15 +24,30 @@ class DriverManager:
             opts.set_preference("gfx.webrender.all", True)
             opts.set_preference("webgl.disabled", False)
 
-        mime_list = ",".join([
-            "application/octet-stream", "application/zip", "application/x-zip-compressed", "application/pdf",
-            "text/plain", "text/csv", "text/x-csrc", "text/x-c", "text/x-c++src",
-            "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-            "application/vnd.ms-powerpoint", "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-            "application/vnd.ms-excel", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            "application/x-tar", "application/gzip", "application/x-7z-compressed", "application/x-rar-compressed"
-        ])
-        
+        mime_list = ",".join(
+            [
+                "application/octet-stream",
+                "application/zip",
+                "application/x-zip-compressed",
+                "application/pdf",
+                "text/plain",
+                "text/csv",
+                "text/x-csrc",
+                "text/x-c",
+                "text/x-c++src",
+                "application/msword",
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                "application/vnd.ms-powerpoint",
+                "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+                "application/vnd.ms-excel",
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                "application/x-tar",
+                "application/gzip",
+                "application/x-7z-compressed",
+                "application/x-rar-compressed",
+            ]
+        )
+
         opts.set_preference("browser.download.folderList", 2)
         opts.set_preference("browser.download.dir", self.download_dir)
         opts.set_preference("browser.download.useDownloadDir", True)

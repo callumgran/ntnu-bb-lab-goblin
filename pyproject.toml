@@ -1,14 +1,14 @@
 [build-system]
-requires = ["setuptools>=61.0", "wheel"]
+requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "ntnu-bb-downloader-cli"
+name = "ntnu-bb-lab-goblin"
 version = "0.1.0"
-description = "A CLI tool for downloading NTNU Blackboard submissions"
+description = "A CLI goblin that crawls NTNU Blackboard and downloads + renames student submissions."
 readme = "README.md"
-license = {text = "MIT"}
-authors = [{name = "Callum Gran", email = "callum.gran@gmail.com"}]
+license = { text = "MIT" }
+authors = [{ name = "Callum Gran", email = "callum.gran@gmail.com" }]
 requires-python = ">=3.8"
 classifiers = [
   "Development Status :: 3 - Alpha",
@@ -16,18 +16,42 @@ classifiers = [
   "License :: OSI Approved :: MIT License",
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Environment :: Console",
+  "Topic :: Education",
+  "Topic :: Utilities",
 ]
+keywords = ["ntnu", "blackboard", "selenium", "downloader", "assignments", "cli"]
+
 dependencies = [
   "selenium>=4.0.0",
   "webdriver-manager>=4.0.0",
+  "tqdm>=4.0.0",
 ]
 
 [project.scripts]
 bb-downloader = "cli:main"
 
+[project.urls]
+Homepage = "https://github.com/callumgran/ntnu-bb-lab-goblin"
+Repository = "https://github.com/callumgran/ntnu-bb-lab-goblin"
+Issues = "https://github.com/callumgran/ntnu-bb-lab-goblin/issues"
+
 [tool.setuptools]
-package-dir = {"" = "src"}
+package-dir = { "" = "src" }
+py-modules = ["cli"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.black]
+line-length = 88
+target-version = ["py310"]
+skip-string-normalization = false
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
