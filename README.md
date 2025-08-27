@@ -1,4 +1,4 @@
-# 🧌 NTNU BB Goblin
+# 🧌 NTNU BB LAB Goblin
 
 A goblin that crawls NTNU Blackboard and downloads + renames all student submissions so you don’t have to 📥
 
@@ -32,8 +32,8 @@ This way, cookies and sessions are reused automatically. If you are already logg
 Clone the repository and install it as a package:
 
 ```bash
-git clone https://github.com/<your-username>/ntnu-bb-goblin.git
-cd ntnu-bb-goblin
+git clone https://github.com/callumgran/ntnu-bb-lab-goblin.git
+cd ntnu-bb-lab-goblin
 python3 -m venv venv
 source venv/bin/activate
 pip install -e .
