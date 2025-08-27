@@ -30,7 +30,7 @@ def main():
 
         total = get_total_items_from_header(driver)
         if total is not None:
-            print(f"📝 Needs grading: {total} element(s).")
+            print(f"📝 {total} {total == 1 and 'submission' or 'submissions'} found that need grading.")
         else:
             print(
                 "📝 Couldn’t read the total count from the header (progress will be unbounded)."

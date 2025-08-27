@@ -55,6 +55,7 @@ class DriverManager:
         opts.set_preference("pdfjs.disabled", True)
         opts.set_preference("browser.download.manager.showWhenStarting", False)
         opts.set_preference("browser.download.alwaysOpenPanel", False)
+        opts.set_capability("unhandledPromptBehavior", "accept")
 
         self.driver = webdriver.Firefox(
             service=FirefoxService(GeckoDriverManager().install()),
