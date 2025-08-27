@@ -4,11 +4,12 @@ from selenium.webdriver.firefox.service import Service as FirefoxService
 from webdriver_manager.firefox import GeckoDriverManager
 
 class DriverManager:
-    def __init__(self, profile_path: str, download_dir: str):
+    def __init__(self, profile_path: str, download_dir: str, headless: bool = True):
         self.profile_path = profile_path
         self.download_dir = download_dir
         self.driver = None
         self._setup_download_directory()
+        self.headless = headless
 
     def _setup_download_directory(self):
         os.makedirs(self.download_dir, exist_ok=True)
@@ -17,6 +18,10 @@ class DriverManager:
         opts = webdriver.FirefoxOptions()
         opts.add_argument("-profile")
         opts.add_argument(self.profile_path)
+        if self.headless:
+            opts.add_argument("-headless")
+            opts.set_preference("gfx.webrender.all", True)
+            opts.set_preference("webgl.disabled", False)
 
         mime_list = ",".join([
             "application/octet-stream", "application/zip", "application/x-zip-compressed", "application/pdf",

@@ -81,10 +81,10 @@ def go_next_submission(driver):
         return False
 
 
-def open_vurdering(driver):
+def open_vurdering(driver, course_id):
 	wait_for_page(driver)
 
-	needs_grading_url = "https://ntnu.blackboard.com/webapps/gradebook/do/instructor/viewNeedsGrading?course_id=_52568_1"
+	needs_grading_url = f"https://ntnu.blackboard.com/webapps/gradebook/do/instructor/viewNeedsGrading?course_id={course_id}"
 	current = driver.current_url
 	if "viewNeedsGrading" not in current:
 		driver.get(needs_grading_url)
@@ -106,10 +106,8 @@ def open_first_submission(driver):
     locator = (By.CSS_SELECTOR, "tbody#listContainer_databody a.gradeAttempt[aria-label^='Vurder forsøk for']")
     try:
         el = WebDriverWait(driver, WAIT).until(EC.element_to_be_clickable(locator))
-        aria = el.get_attribute("aria-label") or "Vurder forsøk"
         driver.execute_script("arguments[0].scrollIntoView({block:'center'});", el)
         el.click()
-        print(f"✅ Opened first submission: {aria}")
 
         WebDriverWait(driver, WAIT * 3).until(
             lambda d: any(s in d.current_url for s in ("gradeAssignment", "attempt_id", "assignment/grade"))

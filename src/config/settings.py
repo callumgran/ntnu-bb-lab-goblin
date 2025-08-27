@@ -1,6 +1,6 @@
 from pathlib import Path
 
-COURSE_OUTLINE_URL = "https://ntnu.blackboard.com/ultra/courses/_52568_1/cl/outline"
+COURSE_ID = "_52568_1" # Course ID for INFT2503 (the reason this script exists)
 DOWNLOAD_DIR = str(Path.cwd() / "bb_downloads")
-FIREFOX_PROFILE = str(Path.home() / ".mozilla/firefox/selenium-profile") # See the README for how to set up a Firefox profile for Selenium
+FIREFOX_PROFILE = str(Path.home() / ".mozilla/firefox/selenium-profile")
 WAIT = 10  # seconds

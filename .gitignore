@@ -214,3 +214,7 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Downloads folder
+bb_downloads/
+bb_downloads/*

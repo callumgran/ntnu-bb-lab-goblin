@@ -36,7 +36,7 @@ def get_lab_number(driver):
 
     m = re.search(r"(\d+)", title)
     lab_num = int(m.group(1)) if m else None
-    return title, lab_num
+    return lab_num
 
 
 def get_total_items_from_header(driver):

@@ -8,11 +8,16 @@ from downloader.page_parser import get_student_name, get_lab_number, find_downlo
 from downloader.file_utils import on_downloads_complete, sanitize_filename, split_extension
 
 
-def download_current_submission(driver):
+def download_current_submission(driver, selected_lab=None):
     student = get_student_name(driver)
-    lab_title, lab_num = get_lab_number(driver)
+    lab_num = get_lab_number(driver)
+
+    if (selected_lab is not None) and (lab_num != selected_lab):
+        print(f"⏭️  Skipping lab #{lab_num} for {student} (looking for lab #{selected_lab})")
+        return False
+
     print(f"👤 Student: {student}")
-    print(f"📘 Title: {lab_title} | Lab #: {lab_num if lab_num is not None else 'N/A'}")
+    print(f"📘 Lab #: {lab_num if lab_num is not None else 'N/A'}")
 
     try:
         el, href, orig_file = find_download_link(driver)
