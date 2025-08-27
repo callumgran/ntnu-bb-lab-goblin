@@ -46,85 +46,39 @@ def go_next_submission(driver):
     except Exception:
         before_txt = None
 
-    locators = [
-        (By.CSS_SELECTOR, "div.pager.next a[onclick*='viewNext']"),
-        (By.XPATH, "//div[contains(@class,'pager') and contains(@class,'next')]//a[contains(@onclick,'viewNext')]"),
-    ]
-
-    for loc in locators:
-        try:
-            a = WebDriverWait(driver, WAIT).until(EC.presence_of_element_located(loc))
-            try:
-                container = a.find_element(By.XPATH, "./ancestor::div[contains(@class,'pager')][1]")
-                if "disabled" in (container.get_attribute("class") or ""):
-                    return False
-            except Exception:
-                pass
-
-            driver.execute_script("arguments[0].scrollIntoView({block:'center'});", a)
-            try:
-                a.click()
-            except Exception:
-                driver.execute_script("arguments[0].click();", a)
-
-            try:
-                WebDriverWait(driver, WAIT * 3).until(
-                    lambda d: (
-                        (before_txt is not None and
-                         d.find_element(By.CSS_SELECTOR, "div.students-pager h3").text.strip() != before_txt)
-                        or "currentAttemptIndex=" in d.current_url
-                        or "attempt_id=" in d.current_url
-                    )
-                )
-            except TimeoutException:
-                pass
-
-            wait_for_page(driver)
-            return True
-        except TimeoutException:
-            continue
+    locator = By.CSS_SELECTOR, "div.pager.next a[onclick*='viewNext']"
 
     try:
-        has_controller = driver.execute_script(
-            "return (typeof theAttemptNavController !== 'undefined') && "
-            "theAttemptNavController && typeof theAttemptNavController.viewNext === 'function';"
-        )
-        if has_controller:
-            driver.execute_script("return theAttemptNavController.viewNext();")
-            try:
-                WebDriverWait(driver, WAIT * 3).until(
-                    lambda d: (
-                        (before_txt is not None and
-                         d.find_element(By.CSS_SELECTOR, "div.students-pager h3").text.strip() != before_txt)
-                        or "currentAttemptIndex=" in d.current_url
-                        or "attempt_id=" in d.current_url
-                    )
-                )
-            except TimeoutException:
-                pass
-            wait_for_page(driver)
-            return True
-    except Exception:
-        pass
-
-    legacy_locators = [
-        (By.XPATH, "//button[@aria-label='Next' or @title='Next' or contains(.,'Next')]"),
-        (By.XPATH, "//button[@aria-label='Neste' or @title='Neste' or contains(.,'Neste')]"),
-        (By.XPATH, "//*[contains(@class,'chevron') and (contains(@aria-label,'Next') or contains(@aria-label,'Neste'))]"),
-    ]
-    for loc in legacy_locators:
+        a = WebDriverWait(driver, WAIT).until(EC.presence_of_element_located(locator))
         try:
-            el = driver.find_element(*loc)
-            disabled = (el.get_attribute("disabled") or el.get_attribute("aria-disabled"))
-            if disabled and str(disabled).lower() in ("true", "disabled"):
+            container = a.find_element(By.XPATH, "./ancestor::div[contains(@class,'pager')][1]")
+            if "disabled" in (container.get_attribute("class") or ""):
                 return False
-            el.click()
-            wait_for_page(driver)
-            return True
         except Exception:
-            continue
+            pass
 
-    return False
+        driver.execute_script("arguments[0].scrollIntoView({block:'center'});", a)
+        try:
+            a.click()
+        except Exception:
+            driver.execute_script("arguments[0].click();", a)
+
+        try:
+            WebDriverWait(driver, WAIT * 3).until(
+                lambda d: (
+                    (before_txt is not None and
+                        d.find_element(By.CSS_SELECTOR, "div.students-pager h3").text.strip() != before_txt)
+                    or "currentAttemptIndex=" in d.current_url
+                    or "attempt_id=" in d.current_url
+                )
+            )
+        except TimeoutException:
+            pass
+
+        wait_for_page(driver)
+        return True
+    except TimeoutException:
+        return False
 
 
 def open_vurdering(driver):

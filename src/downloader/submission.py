@@ -41,7 +41,8 @@ def download_current_submission(driver):
 
     if not src_path.exists():
         print(f"❌ Expected file not found: {src_path}")
-        print(f"📁 Files in download dir: {[f.name for f in list(Path(DOWNLOAD_DIR).glob("*"))]}")
+        files = list(Path(DOWNLOAD_DIR).glob("*"))
+        print(f"📁 Files in download dir: {[f.name for f in files]}")
             
     try:
         if src_path.exists():

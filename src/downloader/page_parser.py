@@ -5,14 +5,13 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 
-from ..config.settings import WAIT
+from config.settings import WAIT
 from .selenium_utils import wait_for_page
 
 
 def get_student_name(driver):
     wait_for_page(driver)
     try:
-        print("Trying primary selector for student name...")
         span = WebDriverWait(driver, WAIT).until(
             EC.presence_of_element_located((By.XPATH, "//div[contains(@class,'students-pager')]//h3/span[last()]"))
         )
@@ -20,24 +19,6 @@ def get_student_name(driver):
         name = re.sub(r"\s*\(Forsøk\s+\d+\s+av\s+\d+\)\s*$", "", text).strip()
         if name:
             return name
-    except Exception:
-        pass
-
-    try:
-        print("Trying alternative selectors for student name...")
-        h1 = driver.find_element(By.CSS_SELECTOR, "div.students-pager h3 .name-information-profile-card, h1.name-information-profile-card")
-        if h1 and h1.text.strip():
-            return h1.text.strip()
-    except Exception:
-        pass
-
-    try:
-        print("Trying fallback selector for student name...")
-        h3 = driver.find_element(By.CSS_SELECTOR, "div.students-pager h3")
-        txt = h3.text or ""
-        m = re.search(r"^\s*(.*?)\s*\(Forsøk", txt)
-        if m:
-            return m.group(1).strip()
     except Exception:
         pass
 
