@@ -55,9 +55,15 @@ def main():
                     f"⏭️  Skipped {info['student']} (lab {info['lab']}, looking for {args.lab_num})"
                 )
             elif info["success"]:
-                pbar.write(
-                    f"👤 {info['student']} | 📘 Lab {info['lab']} | ⬇️ {info['filename']}"
-                )
+                count = len(info["filenames"])
+                if count == 1:
+                    pbar.write(
+                        f"👤 {info['student']} | 📘 Lab {info['lab']} | ⬇️ {info['filenames'][0]}"
+                    )
+                else:
+                    pbar.write(
+                        f"👤 {info['student']} | 📘 Lab {info['lab']} | ⬇️ {count} files"
+                    )
             else:
                 msg = info["error"] or "unknown error"
                 pbar.write(f"⚠️  {info['student']} | Lab {info['lab']}: {msg}")

@@ -2,6 +2,7 @@ import re
 from urllib.parse import urlparse, parse_qs
 
 from selenium.webdriver.support.ui import WebDriverWait
+from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 
@@ -62,20 +63,42 @@ def get_total_items_from_header(driver):
         return None
 
 
-def find_download_link(driver):
+def find_download_links(driver):
     wait_for_page(driver)
-    locator = (
-        By.CSS_SELECTOR,
-        "div.downloadFile a.dwnldBtn[href*='/webapps/assignment/download']",
-    )
-    el = WebDriverWait(driver, WAIT).until(EC.element_to_be_clickable(locator))
-    href = el.get_attribute("href") or ""
-    file_basename = None
-    if href:
-        try:
-            qs = parse_qs(urlparse(href).query)
-            if "fileName" in qs and qs["fileName"]:
-                file_basename = qs["fileName"][0]
-        except Exception:
-            pass
-    return el, href, file_basename
+
+    anchors = []
+    try:
+        WebDriverWait(driver, WAIT).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, "ul#currentAttempt_submissionList.filesList"))
+        )
+        anchors = driver.find_elements(
+            By.CSS_SELECTOR,
+            "ul#currentAttempt_submissionList.filesList li div.downloadFile a.dwnldBtn[href*='/webapps/assignment/download']"
+        )
+    except TimeoutException:
+        anchors = []
+
+    if not anchors:
+        anchors = driver.find_elements(
+            By.CSS_SELECTOR,
+            "div.downloadFile a.dwnldBtn[href*='/webapps/assignment/download']"
+        )
+
+    links = []
+    for el in anchors:
+        href = el.get_attribute("href") or ""
+        file_basename = None
+        if href:
+            try:
+                qs = parse_qs(urlparse(href).query)
+                vals = qs.get("fileName")
+                if vals and vals[0]:
+                    file_basename = vals[0]
+            except Exception:
+                pass
+        links.append((el, href, file_basename))
+
+    if not links:
+        raise TimeoutException("No downloadable files found for this attempt.")
+
+    return links
