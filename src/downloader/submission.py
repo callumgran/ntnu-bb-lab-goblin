@@ -4,6 +4,9 @@ import os
 import time
 
 from selenium.common.exceptions import TimeoutException, WebDriverException
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.by import By
 
 from config.settings import DOWNLOAD_DIR
 from downloader.page_parser import get_student_name, get_lab_number, find_download_links
@@ -23,6 +26,23 @@ def _is_firefox_neterror(driver):
     except Exception:
         return False
 
+def _refind_download_element(driver, href, timeout=10):
+    try:
+        WebDriverWait(driver, timeout).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, "ul#currentAttempt_submissionList"))
+        )
+    except Exception:
+        pass
+    els = driver.find_elements(By.CSS_SELECTOR, "ul#currentAttempt_submissionList a.dwnldBtn")
+    for e in els:
+        if (e.get_attribute("href") or "") == href:
+            return e
+    els = driver.find_elements(By.CSS_SELECTOR, "div.downloadFile a.dwnldBtn")
+    for e in els:
+        if (e.get_attribute("href") or "") == href:
+            return e
+    return None
+
 
 def _browser_download_with_retries(driver, el, href, dst_path, retries: int = 2):
     try:
@@ -33,7 +53,16 @@ def _browser_download_with_retries(driver, el, href, dst_path, retries: int = 2)
     while attempt <= retries:
         attempt += 1
         before_handles = set(driver.window_handles)
-        driver.execute_script("arguments[0].scrollIntoView({block:'center'});", el)
+        try:
+            driver.execute_script("arguments[0].scrollIntoView({block:'center'});", el)
+        except Exception:
+            el = _refind_download_element(driver, href)
+            if el is None:
+                time.sleep(1.0)
+                el = _refind_download_element(driver, href)
+                if el is None:
+                    continue
+
         try:
             driver.execute_script("arguments[0].target = '_blank'; arguments[0].click();", el)
         except WebDriverException:
@@ -59,6 +88,7 @@ def _browser_download_with_retries(driver, el, href, dst_path, retries: int = 2)
                         pass
                     time.sleep(0.2)
                 time.sleep(1.0)
+                el = _refind_download_element(driver, href)
                 continue
             on_downloads_complete(DOWNLOAD_DIR, idle_seconds=2)
             return True
@@ -83,6 +113,7 @@ def _browser_download_with_retries(driver, el, href, dst_path, retries: int = 2)
                     pass
                 time.sleep(0.2)
             time.sleep(1.0)
+            el = _refind_download_element(driver, href)
             continue
         on_downloads_complete(DOWNLOAD_DIR, idle_seconds=2)
         try:
